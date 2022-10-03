@@ -1,0 +1,71 @@
+import TaskList from './TaskList'
+import * as TaskStories from './Task.stories'
+import { Provider } from 'react-redux'
+import { configureStore, createSlice } from '@reduxjs/toolkit'
+
+export const MockedState = {
+    tasks: [
+        { ...TaskStories.Default.args.task, id: '1', title: 'Task 1' },
+        { ...TaskStories.Default.args.task, id: '2', title: 'Task 2' },
+        { ...TaskStories.Default.args.task, id: '3', title: 'Task 3' },
+        { ...TaskStories.Default.args.task, id: '4', title: 'Task 4' },
+        { ...TaskStories.Default.args.task, id: '5', title: 'Task 5' },
+        { ...TaskStories.Default.args.task, id: '6', title: 'Task 6' },
+    ], status: 'idle', error: null
+}
+
+const Mockstore = ({ taskboxState, children }) => (
+    <Provider store={configureStore({
+        reducer: {
+            taskbox: createSlice({
+                name: 'taskbox',
+                initialState: taskboxState,
+                reducers: {
+                    updateTaskState: (state, action) => {
+                        const { id, newTaskState } = action.payload
+                        const taskIndex = state.tasks.findIndex((task) => task.id === id)
+                        if (taskIndex >= 0) {
+                            state.tasks[taskIndex].state = newTaskState
+                        }
+                    }
+                }
+            }).reducer
+        }
+    })}>
+        {children}
+    </Provider>
+)
+
+export default {
+    component: TaskList,
+    title: "TaskList",
+    decorators: [story => <div style={{ padding: 20 }}>{story()}</div>],
+    excludeStories: /.*MockedState$/
+
+}
+
+const Templete = () => <TaskList />
+
+export const Default = Templete.bind({})
+Default.decorators = [
+    (story) => <Mockstore taskboxState={MockedState}>{story()}</Mockstore>
+]
+
+export const WithPinnedTasks = Templete.bind({})
+WithPinnedTasks.decorators = [
+    (story) => {
+        const pinnedtasks = [
+            ...MockedState.tasks.slice(0, 5),
+            { id: '6', title: 'Task 6 (pinned)', state: 'TASK_PINNED' },
+        ]
+        return <Mockstore taskboxState={{ ...MockedState, tasks: pinnedtasks }}>{story()}</Mockstore>
+    }
+]
+
+export const Loading = Templete.bind({})
+Loading.decorators = [
+    (story) => <Mockstore taskboxState={{ ...MockedState, state: 'loading' }}>{story()}</Mockstore>
+]
+
+export const Empty = Templete.bind({})
+Empty.decorators = [(stroy) => <Mockstore taskboxState={{ ...MockedState, tasks: [] }}>{stroy()}</Mockstore>]
